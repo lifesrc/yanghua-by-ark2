@@ -19,13 +19,13 @@ export const usePlantStore = defineStore('plant', () => {
     return res
   }
 
-  const createPlant = async (data: any) => {
+  const createPlant = async (data: FormData) => {
     const res = await request.post('/plants', data)
     plants.value.unshift(res.data)
     return res
   }
 
-  const updatePlant = async (id: number, data: any) => {
+  const updatePlant = async (id: number, data: FormData) => {
     const res = await request.put(`/plants/${id}`, data)
     const index = plants.value.findIndex(p => p.id === id)
     if (index !== -1) {

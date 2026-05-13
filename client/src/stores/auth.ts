@@ -23,14 +23,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const login = async (email: string, password: string) => {
-    const res = await request.post('/auth?action=login', { email, password })
+    const res = await request.post('/auth/login', { email, password })
     setToken(res.data.token)
     setUser(res.data.user)
     return res
   }
 
   const register = async (username: string, email: string, password: string) => {
-    const res = await request.post('/auth?action=register', { username, email, password })
+    const res = await request.post('/auth/register', { username, email, password })
     setToken(res.data.token)
     setUser(res.data.user)
     return res
@@ -41,12 +41,23 @@ export const useAuthStore = defineStore('auth', () => {
     setUser(null)
   }
 
+  const fetchUserInfo = async () => {
+    if (!token.value) return
+    try {
+      const res = await request.get('/auth/me')
+      setUser(res.data)
+    } catch (error) {
+      console.error('获取用户信息失败', error)
+    }
+  }
+
   return {
     token,
     user,
     isLoggedIn,
     login,
     register,
-    logout
+    logout,
+    fetchUserInfo
   }
 })
