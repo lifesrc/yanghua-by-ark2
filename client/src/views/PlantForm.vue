@@ -85,6 +85,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePlantStore } from '@/stores/plant'
 import { PlantTypeLabels, type PlantType } from '@/types'
 import request from '@/utils/request'
+import { showToast } from 'vant'
+import { normalizeImageFile } from '@/utils/image'
 
 const route = useRoute()
 const router = useRouter()
@@ -113,15 +115,19 @@ const triggerFileInput = () => {
   fileInputRef.value?.click()
 }
 
-const handleFileChange = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) {
+const handleFileChange = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const raw = input.files?.[0]
+  if (!raw) return
+  try {
+    const file = await normalizeImageFile(raw)
     selectedFile.value = file
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      previewImage.value = event.target?.result as string
-    }
-    reader.readAsDataURL(file)
+    previewImage.value = URL.createObjectURL(file)
+  } catch (err) {
+    console.error('图片处理失败', err)
+    showToast('图片处理失败，请换一张')
+  } finally {
+    input.value = ''
   }
 }
 
@@ -144,7 +150,8 @@ const onSubmit = async () => {
     }
 
     if (isEdit.value) {
-      await plantStore.updatePlant(route.params.id as string, formData)
+      const plantId = Array.isArray(route.params.id) ? route.params.id[0] : (route.params.id || '')
+      await plantStore.updatePlant(parseInt(plantId, 10), formData)
     } else {
       await plantStore.createPlant(formData)
     }

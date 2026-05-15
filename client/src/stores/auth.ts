@@ -9,7 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => !!token.value)
 
-  const setToken = (newToken: string) => {
+  const setToken = (newToken: string | null) => {
     token.value = newToken
     if (newToken) {
       localStorage.setItem('token', newToken)

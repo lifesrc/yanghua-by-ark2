@@ -107,7 +107,6 @@ export class RecordController {
           error: '植物不存在或无权限'
         })
       }
-
       const image = req.file ? `/uploads/${req.file.filename}` : undefined
       const recordId = await recordRepository.create(
         req.user.id,

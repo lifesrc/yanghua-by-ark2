@@ -9,7 +9,7 @@ import recordRoutes from './routes/record.routes'
 import statsRoutes from './routes/stats.routes'
 
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001
 
 app.use(cors())
 app.use(express.json())

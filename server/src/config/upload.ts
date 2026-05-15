@@ -21,17 +21,12 @@ const storage = multer.diskStorage({
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 10 * 1024 * 1024
   },
   fileFilter: (_req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
-    const mimetype = allowedTypes.test(file.mimetype)
-    
-    if (mimetype && extname) {
+    if (file.mimetype.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i.test(file.originalname)) {
       return cb(null, true)
-    } else {
-      cb(new Error('只允许上传图片文件'))
     }
+    cb(new Error('只允许上传图片文件'))
   }
 })

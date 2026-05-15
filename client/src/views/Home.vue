@@ -74,9 +74,10 @@
       </div>
     </div>
 
-    <div class="records-section" v-if="selectedPlant">
+    <div class="records-section">
       <div class="section-header">
-        <h3>养护记录</h3>
+        <h3 v-if="selectedPlant">{{ selectedPlant.name }} 的养护记录</h3>
+        <h3 v-else>全部养护记录</h3>
       </div>
       <div class="records-list" v-if="plantRecords.length > 0">
         <div v-for="record in plantRecords" :key="record.id" class="record-item">
@@ -85,6 +86,7 @@
           </div>
           <div class="record-content">
             <div class="record-title">
+              <span v-if="!selectedPlant" class="plant-name-tag">{{ record.plant_name }}</span>
               {{ record.type === 'water' ? '浇水' : '施肥' }}
             </div>
             <div class="record-desc" v-if="record.description">{{ record.description }}</div>
@@ -94,13 +96,8 @@
         </div>
       </div>
       <div class="empty-records" v-else>
-        <p>还没有养护记录</p>
+        <p>{{ selectedPlant ? '还没有养护记录' : '暂无养护记录' }}</p>
       </div>
-    </div>
-
-    <div class="empty-state" v-if="!selectedPlant && plantStore.plants.length > 0">
-      <div class="empty-icon">👆</div>
-      <p>请在上方选择一盆植物</p>
     </div>
 
     <van-popup v-model:show="showCareModal" position="bottom" round>
@@ -204,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePlantStore } from '@/stores/plant'
@@ -212,7 +209,8 @@ import { PlantTypeLabels, type Plant, type CareRecord, type PlantType } from '@/
 import request from '@/utils/request'
 import dayjs from 'dayjs'
 import TabBar from '@/components/TabBar.vue'
-import { showConfirmDialog } from 'vant'
+import { showConfirmDialog, showToast } from 'vant'
+import { normalizeImageFile } from '@/utils/image'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -234,13 +232,15 @@ const defaultPlantImage = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_im
 
 const careForm = ref({
   description: '',
-  previewImage: ''
+  previewImage: '',
+  file: null as File | null
 })
 
 const newPlantForm = ref({
   name: '',
   type: '' as PlantType,
-  previewImage: ''
+  previewImage: '',
+  file: null as File | null
 })
 
 const plantTypeOptions = Object.entries(PlantTypeLabels).map(([value, text]) => ({ text, value }))
@@ -248,7 +248,7 @@ const plantTypeOptions = Object.entries(PlantTypeLabels).map(([value, text]) => 
 const selectPlant = (plant: Plant) => {
   if (selectedPlant.value?.id === plant.id) {
     selectedPlant.value = null
-    plantRecords.value = []
+    fetchAllRecords()
   } else {
     selectedPlant.value = plant
     fetchPlantRecords(plant.id)
@@ -257,15 +257,38 @@ const selectPlant = (plant: Plant) => {
 
 const unselectPlant = () => {
   selectedPlant.value = null
-  plantRecords.value = []
+  fetchAllRecords()
+}
+
+const fetchAllRecords = async () => {
+  try {
+    const res = await request.get('/records')
+    const plants = plantStore.plants
+    plantRecords.value = res.data
+      .slice(0, 20)
+      .map((r: CareRecord) => {
+        const plant = plants.find(p => p.id === r.plant_id)
+        return {
+          ...r,
+          plant_name: plant?.name || '未知植物'
+        }
+      })
+  } catch (error) {
+    console.error('获取记录失败', error)
+  }
 }
 
 const fetchPlantRecords = async (plantId: number) => {
   try {
     const res = await request.get('/records')
+    const plant = plantStore.plants.find(p => p.id === plantId)
     plantRecords.value = res.data
       .filter((r: CareRecord) => r.plant_id === plantId)
-      .slice(0, 10)
+      .slice(0, 20)
+      .map((r: CareRecord) => ({
+        ...r,
+        plant_name: plant?.name || '未知植物'
+      }))
   } catch (error) {
     console.error('获取记录失败', error)
   }
@@ -273,7 +296,7 @@ const fetchPlantRecords = async (plantId: number) => {
 
 const openCareModal = (type: 'water' | 'fertilize') => {
   careType.value = type
-  careForm.value = { description: '', previewImage: '' }
+  careForm.value = { description: '', previewImage: '', file: null }
   showCareModal.value = true
 }
 
@@ -285,25 +308,35 @@ const triggerPlantFileInput = () => {
   plantFileInputRef.value?.click()
 }
 
-const handleFileChange = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      careForm.value.previewImage = event.target?.result as string
-    }
-    reader.readAsDataURL(file)
+const handleFileChange = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const raw = input.files?.[0]
+  if (!raw) return
+  try {
+    const file = await normalizeImageFile(raw)
+    careForm.value.file = file
+    careForm.value.previewImage = URL.createObjectURL(file)
+  } catch (err) {
+    console.error('图片处理失败', err)
+    showToast('图片处理失败，请换一张')
+  } finally {
+    input.value = ''
   }
 }
 
-const handlePlantFileChange = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      newPlantForm.value.previewImage = event.target?.result as string
-    }
-    reader.readAsDataURL(file)
+const handlePlantFileChange = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const raw = input.files?.[0]
+  if (!raw) return
+  try {
+    const file = await normalizeImageFile(raw)
+    newPlantForm.value.file = file
+    newPlantForm.value.previewImage = URL.createObjectURL(file)
+  } catch (err) {
+    console.error('图片处理失败', err)
+    showToast('图片处理失败，请换一张')
+  } finally {
+    input.value = ''
   }
 }
 
@@ -318,12 +351,18 @@ const submitCare = async () => {
       formData.append('description', careForm.value.description)
     }
     const fileInput = fileInputRef.value
-    if (fileInput?.files?.[0]) {
+    if (careForm.value.file) {
+      formData.append('image', careForm.value.file)
+    } else if (fileInput?.files?.[0]) {
       formData.append('image', fileInput.files[0])
     }
     await request.post('/records', formData)
     showCareModal.value = false
-    fetchPlantRecords(selectedPlant.value.id)
+    if (selectedPlant.value) {
+      fetchPlantRecords(selectedPlant.value.id)
+    } else {
+      fetchAllRecords()
+    }
   } catch (error) {
     console.error('提交失败', error)
   } finally {
@@ -339,12 +378,14 @@ const addPlant = async () => {
     formData.append('name', newPlantForm.value.name)
     formData.append('type', newPlantForm.value.type)
     const fileInput = plantFileInputRef.value
-    if (fileInput?.files?.[0]) {
+    if (newPlantForm.value.file) {
+      formData.append('image', newPlantForm.value.file)
+    } else if (fileInput?.files?.[0]) {
       formData.append('image', fileInput.files[0])
     }
     await plantStore.createPlant(formData)
     showAddPlant.value = false
-    newPlantForm.value = { name: '', type: 'succulent', previewImage: '' }
+    newPlantForm.value = { name: '', type: 'succulent', previewImage: '', file: null }
   } catch (error) {
     console.error('添加失败', error)
   } finally {
@@ -383,7 +424,7 @@ const formatTime = (time: string) => {
 
 onMounted(async () => {
   await plantStore.fetchPlants()
-  // 默认不选中任何植物
+  fetchAllRecords()
 })
 </script>
 
@@ -644,6 +685,16 @@ onMounted(async () => {
       margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
+      .plant-name-tag {
+        background: #8FA98F;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-right: 8px;
+        font-weight: 500;
+      }
+
       .record-icon {
         width: 40px;
         height: 40px;
@@ -693,6 +744,7 @@ onMounted(async () => {
         object-fit: cover;
         margin-left: 12px;
         flex-shrink: 0;
+        cursor: pointer;
       }
     }
 

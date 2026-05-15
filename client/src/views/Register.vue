@@ -31,7 +31,7 @@
           label="密码"
           type="password"
           placeholder="请输入密码（至少6位）"
-          :rules="[{ required: true, min: 6, message: '密码至少6位' }]"
+          :rules="[{ required: true, validator: passwordValidator, message: '密码至少6位' }]"
         />
         <div style="margin: 24px 16px 16px">
           <van-button round block type="primary" color="#8FA98F" native-type="submit" :loading="loading">
@@ -62,6 +62,10 @@ const form = ref({
   email: '',
   password: ''
 })
+
+const passwordValidator = (value: string) => {
+  return value && value.length >= 6
+}
 
 const onSubmit = async () => {
   loading.value = true
