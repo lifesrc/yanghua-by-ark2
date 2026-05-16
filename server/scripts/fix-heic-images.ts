@@ -16,18 +16,9 @@ async function normalizeHeicToJpeg(filePath: string): Promise<string> {
   }
 
   const realExt = detected.ext.toLowerCase()
-  const currentExt = path.extname(filePath).toLowerCase().slice(1)
 
   if (!HEIC_TYPES.has(realExt)) {
-    if (realExt !== currentExt) {
-      const dir = path.dirname(filePath)
-      const baseName = path.basename(filePath, path.extname(filePath))
-      const newPath = path.join(dir, baseName + '.' + realExt)
-      await fs.rename(filePath, newPath)
-      console.log(`修正扩展名：${path.basename(filePath)} -> ${path.basename(newPath)}`)
-      return newPath
-    }
-    console.log(`格式正确，跳过：${path.basename(filePath)}`)
+    console.log(`非HEIC格式，跳过：${path.basename(filePath)}`)
     return filePath
   }
 
@@ -50,7 +41,7 @@ async function normalizeHeicToJpeg(filePath: string): Promise<string> {
     await fs.unlink(filePath).catch(() => {})
   }
 
-  console.log(`已转换HEIC：${path.basename(filePath)} -> ${path.basename(newPath)}`)
+  console.log(`已转换HEIC为JPG：${path.basename(filePath)} -> ${path.basename(newPath)}`)
   return newPath
 }
 

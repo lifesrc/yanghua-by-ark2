@@ -28,6 +28,13 @@ export const PlantTypeLabels: Record<PlantType, string> = {
   other: '其他'
 }
 
+export interface RecordImage {
+  id: number
+  record_id: number
+  image_path: string
+  created_at: string
+}
+
 export interface CareRecord {
   id: number
   user_id: number
@@ -37,6 +44,7 @@ export interface CareRecord {
   type: 'water' | 'fertilize'
   description?: string
   image?: string
+  images?: RecordImage[]
   created_at: string
 }
 
