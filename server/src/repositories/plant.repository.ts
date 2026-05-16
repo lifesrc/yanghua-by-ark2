@@ -13,58 +13,67 @@ export interface Plant {
 export class PlantRepository {
   findByUserId(userId: number): Promise<Plant[]> {
     return new Promise((resolve, reject) => {
-      db.all('SELECT * FROM plants WHERE user_id = ? ORDER BY created_at DESC', [userId], (err, rows: any) => {
-        if (err) reject(err)
-        else resolve(rows as Plant[])
-      })
+      try {
+        const rows = db.prepare('SELECT * FROM plants WHERE user_id = ? ORDER BY created_at DESC').all(userId) as Plant[]
+        resolve(rows)
+      } catch (err) {
+        reject(err)
+      }
     })
   }
 
   findById(id: number): Promise<Plant | undefined> {
     return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM plants WHERE id = ?', [id], (err, row: any) => {
-        if (err) reject(err)
-        else resolve(row as Plant | undefined)
-      })
+      try {
+        const row = db.prepare('SELECT * FROM plants WHERE id = ?').get(id) as Plant | undefined
+        resolve(row)
+      } catch (err) {
+        reject(err)
+      }
     })
   }
 
   create(userId: number, name: string, type: string, image?: string, notes?: string): Promise<number> {
     return new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO plants (user_id, name, type, image, notes) VALUES (?, ?, ?, ?, ?)',
-        [userId, name, type, image || null, notes || null],
-        function (err) {
-          if (err) reject(err)
-          else resolve(this.lastID as number)
-        }
-      )
+      try {
+        const result = db.prepare(
+          'INSERT INTO plants (user_id, name, type, image, notes) VALUES (?, ?, ?, ?, ?)'
+        ).run(userId, name, type, image || null, notes || null)
+        resolve(result.lastInsertRowid as number)
+      } catch (err) {
+        reject(err)
+      }
     })
   }
 
   update(id: number, name: string, type: string, image?: string, notes?: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      let sql, params
-      if (image) {
-        sql = 'UPDATE plants SET name = ?, type = ?, image = ?, notes = ? WHERE id = ?'
-        params = [name, type, image, notes || null, id]
-      } else {
-        sql = 'UPDATE plants SET name = ?, type = ?, notes = ? WHERE id = ?'
-        params = [name, type, notes || null, id]
+      try {
+        let result
+        if (image) {
+          result = db.prepare('UPDATE plants SET name = ?, type = ?, image = ?, notes = ? WHERE id = ?').run(
+            name, type, image, notes || null, id
+          )
+        } else {
+          result = db.prepare('UPDATE plants SET name = ?, type = ?, notes = ? WHERE id = ?').run(
+            name, type, notes || null, id
+          )
+        }
+        resolve((result.changes || 0) > 0)
+      } catch (err) {
+        reject(err)
       }
-      db.run(sql, params, function (err) {
-        if (err) reject(err)
-        else resolve((this.changes || 0) > 0)
-      })
     })
   }
 
   delete(id: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      db.run('DELETE FROM plants WHERE id = ?', [id], function (err) {
-        if (err) reject(err)
-        else resolve((this.changes || 0) > 0)
-      })
+      try {
+        const result = db.prepare('DELETE FROM plants WHERE id = ?').run(id)
+        resolve((result.changes || 0) > 0)
+      } catch (err) {
+        reject(err)
+      }
     })
   }
 }
