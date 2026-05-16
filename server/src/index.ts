@@ -3,6 +3,7 @@ import cors from 'cors'
 import morgan from 'morgan'
 import path from 'path'
 import { initDatabase } from './database/init'
+import { runMigrations } from './database/migration'
 import authRoutes from './routes/auth.routes'
 import plantRoutes from './routes/plant.routes'
 import recordRoutes from './routes/record.routes'
@@ -42,6 +43,7 @@ app.use((req, res) => {
 })
 
 initDatabase()
+runMigrations()
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`服务器运行在 http://0.0.0.0:${PORT}`)
