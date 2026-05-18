@@ -40,6 +40,29 @@ export class UserRepository {
       )
     })
   }
+
+  getStats(userId: number): Promise<any> {
+    return new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as plant_count FROM plants WHERE user_id = ?', [userId], (err, plantRow: any) => {
+        if (err) { reject(err); return }
+        db.get('SELECT COUNT(*) as total_records FROM care_records WHERE user_id = ?', [userId], (err, totalRow: any) => {
+          if (err) { reject(err); return }
+          db.get('SELECT COUNT(*) as water_count FROM care_records WHERE user_id = ? AND type = ?', [userId, 'water'], (err, waterRow: any) => {
+            if (err) { reject(err); return }
+            db.get('SELECT COUNT(*) as fertilize_count FROM care_records WHERE user_id = ? AND type = ?', [userId, 'fertilize'], (err, fertilizeRow: any) => {
+              if (err) { reject(err); return }
+              resolve({
+                plant_count: plantRow.plant_count,
+                total_records: totalRow.total_records,
+                water_count: waterRow.water_count,
+                fertilize_count: fertilizeRow.fertilize_count
+              })
+            })
+          })
+        })
+      })
+    })
+  }
 }
 
 export default new UserRepository()
