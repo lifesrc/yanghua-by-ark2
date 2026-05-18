@@ -14,6 +14,53 @@ const plantSchema = Joi.object({
 })
 
 export class PlantController {
+  async getPlantsByUserId(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: '未登录' })
+      }
+
+      const userId = parseInt(req.params.userId)
+      const plants = await plantRepository.findByUserId(userId)
+
+      res.json({
+        success: true,
+        data: plants
+      })
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      })
+    }
+  }
+
+  async getPlantDetail(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: '未登录' })
+      }
+
+      const plant = await plantRepository.findByIdWithUser(parseInt(req.params.id))
+      if (!plant) {
+        return res.status(404).json({
+          success: false,
+          error: '植物不存在'
+        })
+      }
+
+      res.json({
+        success: true,
+        data: plant
+      })
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      })
+    }
+  }
+
   async getAll(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
