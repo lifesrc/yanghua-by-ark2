@@ -47,20 +47,38 @@ function groupRecordsWithImages(rows: any[]): CareRecord[] {
 }
 
 export class CareRecordRepository {
-  findByUserIdWithImages(userId: number, limit = 50): Promise<CareRecord[]> {
+  findByUserIdWithImages(userId: number, limit = 50, plantId?: number): Promise<CareRecord[]> {
     return new Promise((resolve, reject) => {
+      const params: any[] = [userId]
+      let whereClause = 'WHERE cr.user_id = ?'
+      
+      if (plantId !== undefined) {
+        whereClause += ' AND cr.plant_id = ?'
+        params.push(plantId)
+      }
+      
+      params.push(limit)
+      
+      console.log('SQL Where clause:', whereClause)
+      console.log('SQL params:', params)
+      
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
                ri.id as image_id, ri.image_path
         FROM care_records cr
         LEFT JOIN plants p ON cr.plant_id = p.id
         LEFT JOIN record_images ri ON cr.id = ri.record_id
-        WHERE cr.user_id = ?
+        ${whereClause}
         ORDER BY cr.created_at DESC
         LIMIT ?
-      `, [userId, limit], (err, rows: any) => {
-        if (err) reject(err)
-        else resolve(groupRecordsWithImages(rows))
+      `, params, (err, rows: any) => {
+        if (err) {
+          console.error('SQL error:', err)
+          reject(err)
+        } else {
+          console.log('SQL rows:', rows.length)
+          resolve(groupRecordsWithImages(rows))
+        }
       })
     })
   }
@@ -193,6 +211,15 @@ export class CareRecordRepository {
   delete(id: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
       db.run('DELETE FROM care_records WHERE id = ?', [id], function (err) {
+        if (err) reject(err)
+        else resolve((this.changes || 0) > 0)
+      })
+    })
+  }
+
+  deleteByPlantId(plantId: number): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      db.run('DELETE FROM care_records WHERE plant_id = ?', [plantId], function (err) {
         if (err) reject(err)
         else resolve((this.changes || 0) > 0)
       })

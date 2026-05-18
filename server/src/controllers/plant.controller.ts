@@ -2,11 +2,15 @@ import { Response } from 'express'
 import Joi from 'joi'
 import { AuthRequest } from '../middleware/auth'
 import plantRepository from '../repositories/plant.repository'
+import { CareRecordRepository } from '../repositories/record.repository'
+
+const recordRepository = new CareRecordRepository()
 
 const plantSchema = Joi.object({
   name: Joi.string().min(1).max(100).required(),
-  type: Joi.string().valid('succulent', 'fern', 'flower', 'foliage', 'herb', 'orchid', 'other').required(),
-  notes: Joi.string().allow('').optional()
+  type: Joi.string().valid('succulent', 'fern', 'flower', 'foliage', 'herb', 'orchid', 'other').allow('').optional(),
+  notes: Joi.string().allow('').optional(),
+  removeImage: Joi.any().optional()
 })
 
 export class PlantController {
@@ -132,7 +136,14 @@ export class PlantController {
         })
       }
 
-      const image = req.file ? `/uploads/${req.file.filename}` : undefined
+      let image: string | null | undefined
+      if (req.file) {
+        image = `/uploads/${req.file.filename}`
+      } else if (req.body.removeImage === 'true') {
+        image = null
+      } else {
+        image = undefined
+      }
       await plantRepository.update(plantId, value.name, value.type, image, value.notes)
 
       const updatedPlant = await plantRepository.findById(plantId)
@@ -173,6 +184,7 @@ export class PlantController {
         })
       }
 
+      await recordRepository.deleteByPlantId(plantId)
       await plantRepository.delete(plantId)
 
       res.json({

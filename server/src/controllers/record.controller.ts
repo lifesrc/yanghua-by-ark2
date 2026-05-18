@@ -24,7 +24,10 @@ export class RecordController {
       }
 
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50
-      const records = await recordRepository.findByUserIdWithImages(req.user.id, limit)
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined
+      console.log('Query params:', { userId: req.user.id, limit, plantId })
+      const records = await recordRepository.findByUserIdWithImages(req.user.id, limit, plantId)
+      console.log('Records returned:', records.length)
 
       res.json({
         success: true,

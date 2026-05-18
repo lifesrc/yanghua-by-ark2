@@ -10,4 +10,6 @@ if (!fs.existsSync(dbDir)) {
 const dbPath = path.join(dbDir, 'plant-care.db')
 const db = new sqlite3.Database(dbPath)
 
+db.run('PRAGMA foreign_keys = ON')
+
 export default db

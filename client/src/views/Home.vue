@@ -238,14 +238,14 @@
               <span class="optional-badge">可选</span>
             </div>
             <div class="image-upload-area">
-              <div class="upload-box" @click="triggerPlantFileInput">
+              <div class="upload-box" @click="newPlantForm.previewImage ? previewImages([newPlantForm.previewImage], 0) : triggerPlantFileInput()">
                 <img v-if="newPlantForm.previewImage" :src="newPlantForm.previewImage" class="plant-preview" />
                 <div v-else class="upload-placeholder">
                   <van-icon name="plus" size="32" color="#8FA98F" />
                   <span>点击上传照片</span>
                 </div>
+                <van-icon v-if="newPlantForm.previewImage" name="cross" class="plant-remove-btn" @click.stop="clearPlantImage" />
               </div>
-              <van-icon v-if="newPlantForm.previewImage" name="cross" class="remove-image-btn" @click="clearPlantImage" />
             </div>
           </div>
 
@@ -305,7 +305,14 @@
             <span class="header-title">编辑植物信息</span>
             <span class="leaf-icon">🌿</span>
           </div>
-          <van-icon name="cross" class="close-btn" @click="showEditPlant = false" />
+          <div class="header-actions">
+            <div class="delete-plant-btn" @click="handleDeletePlant" title="删除植物">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </div>
+            <van-icon name="cross" class="close-btn" @click="showEditPlant = false" />
+          </div>
         </div>
         
         <van-form @submit="updatePlant" class="plant-form">
@@ -345,12 +352,13 @@
               <span>植物照片</span>
             </div>
             <div class="image-upload-area">
-              <div class="upload-box" @click="triggerEditPlantFileInput">
+              <div class="upload-box" @click="editPlantForm.previewImage ? previewImages([editPlantForm.previewImage], 0) : triggerEditPlantFileInput()">
                 <img v-if="editPlantForm.previewImage" :src="editPlantForm.previewImage" class="plant-preview" />
                 <div v-else class="upload-placeholder">
                   <van-icon name="plus" size="32" color="#8FA98F" />
                   <span>点击上传照片</span>
                 </div>
+                <van-icon v-if="editPlantForm.previewImage" name="cross" class="plant-remove-btn" @click.stop="clearEditPlantImage" />
               </div>
             </div>
           </div>
@@ -504,15 +512,8 @@ const fetchAllRecords = async () => {
 
 const fetchPlantRecords = async (plantId: number) => {
   try {
-    const res = await request.get('/records')
-    const plant = plantStore.plants.find(p => p.id === plantId)
+    const res = await request.get('/records', { params: { plantId, limit: 20 } })
     plantRecords.value = res.data
-      .filter((r: CareRecord) => r.plant_id === plantId)
-      .slice(0, 20)
-      .map((r: CareRecord) => ({
-        ...r,
-        plant_name: plant?.name || '未知植物'
-      }))
   } catch (error) {
     console.error('获取记录失败', error)
   }
@@ -567,6 +568,14 @@ const clearPlantImage = () => {
   newPlantForm.value.file = null
   if (plantFileInputRef.value) {
     plantFileInputRef.value.value = ''
+  }
+}
+
+const clearEditPlantImage = () => {
+  editPlantForm.value.previewImage = ''
+  editPlantForm.value.file = null
+  if (editFileInputRef.value) {
+    editFileInputRef.value.value = ''
   }
 }
 
@@ -771,6 +780,9 @@ const updatePlant = async () => {
     if (editPlantForm.value.file) {
       formData.append('image', editPlantForm.value.file)
     }
+    if (!editPlantForm.value.previewImage && !editPlantForm.value.file) {
+      formData.append('removeImage', 'true')
+    }
     await plantStore.updatePlant(editPlantForm.value.id, formData)
     showEditPlant.value = false
     showToast('修改成功')
@@ -778,6 +790,29 @@ const updatePlant = async () => {
     console.error('修改失败', error)
   } finally {
     submitting.value = false
+  }
+}
+
+const handleDeletePlant = async () => {
+  try {
+    await showConfirmDialog({
+      title: '🌱 确认删除植物',
+      message: '删除「' + editPlantForm.value.name + '」后，该植物的所有养护记录也会被永久清除，确定要删除吗？',
+      confirmButtonText: '确认删除',
+      confirmButtonColor: '#E57373',
+      cancelButtonText: '取消'
+    })
+    await plantStore.deletePlant(editPlantForm.value.id)
+    showEditPlant.value = false
+    if (selectedPlant.value?.id === editPlantForm.value.id) {
+      selectedPlant.value = null
+      fetchAllRecords()
+    } else if (!selectedPlant.value) {
+      fetchAllRecords()
+    }
+    showToast('删除成功')
+  } catch (error) {
+    // 用户取消
   }
 }
 
@@ -1551,6 +1586,35 @@ onMounted(async () => {
     background: rgba(91, 140, 90, 0.05);
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .delete-plant-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(229, 115, 115, 0.1);
+    color: #E57373;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:active {
+      background: rgba(229, 115, 115, 0.2);
+      transform: scale(0.95);
+    }
+  }
+
   .header-decoration {
     display: flex;
     align-items: center;
@@ -1690,10 +1754,11 @@ onMounted(async () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow: visible;
     background: rgba(143, 169, 143, 0.05);
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative;
 
     &:hover {
       border-color: #8FA98F;
@@ -1718,6 +1783,31 @@ onMounted(async () => {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 20px;
+  }
+
+  .plant-remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.25s ease;
+    z-index: 10;
+    opacity: 1;
+    transform: scale(1);
+
+    &:active {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(0.95);
+    }
   }
 
   .remove-image-btn {

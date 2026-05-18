@@ -29,11 +29,11 @@ export class PlantRepository {
     })
   }
 
-  create(userId: number, name: string, type: string, image?: string, notes?: string): Promise<number> {
+  create(userId: number, name: string, type?: string, image?: string, notes?: string): Promise<number> {
     return new Promise((resolve, reject) => {
       db.run(
         'INSERT INTO plants (user_id, name, type, image, notes) VALUES (?, ?, ?, ?, ?)',
-        [userId, name, type, image || null, notes || null],
+        [userId, name, type || null, image || null, notes || null],
         function (err) {
           if (err) reject(err)
           else resolve(this.lastID as number)
@@ -42,15 +42,15 @@ export class PlantRepository {
     })
   }
 
-  update(id: number, name: string, type: string, image?: string, notes?: string): Promise<boolean> {
+  update(id: number, name: string, type?: string, image?: string | null, notes?: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       let sql, params
-      if (image) {
+      if (image !== undefined) {
         sql = 'UPDATE plants SET name = ?, type = ?, image = ?, notes = ? WHERE id = ?'
-        params = [name, type, image, notes || null, id]
+        params = [name, type || null, image || null, notes || null, id]
       } else {
         sql = 'UPDATE plants SET name = ?, type = ?, notes = ? WHERE id = ?'
-        params = [name, type, notes || null, id]
+        params = [name, type || null, notes || null, id]
       }
       db.run(sql, params, function (err) {
         if (err) reject(err)
