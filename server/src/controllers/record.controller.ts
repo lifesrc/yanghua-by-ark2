@@ -17,6 +17,51 @@ const updateSchema = Joi.object({
 })
 
 export class RecordController {
+  async getAllRecords(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: '未登录' })
+      }
+
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 15
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0
+      const records = await recordRepository.findAllWithImages(limit, offset)
+
+      res.json({
+        success: true,
+        data: records
+      })
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      })
+    }
+  }
+
+  async getRecordsByUserId(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: '未登录' })
+      }
+
+      const userId = parseInt(req.params.userId)
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 15
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0
+      const records = await recordRepository.findByUserIdWithImagesPagination(userId, limit, offset)
+
+      res.json({
+        success: true,
+        data: records
+      })
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      })
+    }
+  }
+
   async getAll(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
