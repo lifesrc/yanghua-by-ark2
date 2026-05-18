@@ -29,6 +29,21 @@ export class PlantRepository {
     })
   }
 
+  // 新增获取植物详情并包含用户信息的方法
+  findByIdWithUser(id: number): Promise<Plant | undefined> {
+    return new Promise((resolve, reject) => {
+      db.get(`
+        SELECT p.*, u.username as username, u.avatar as user_avatar
+        FROM plants p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE p.id = ?
+      `, [id], (err, row: any) => {
+        if (err) reject(err)
+        else resolve(row as Plant | undefined)
+      })
+    })
+  }
+
   create(userId: number, name: string, type?: string, image?: string, notes?: string): Promise<number> {
     return new Promise((resolve, reject) => {
       db.run(
