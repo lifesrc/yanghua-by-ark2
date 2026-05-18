@@ -74,3 +74,23 @@ export interface ApiResponse<T = any> {
   message?: string
   error?: string
 }
+
+// 广场页记录（带用户信息）
+export interface SquareRecord extends CareRecord {
+  username: string
+  user_avatar?: string
+}
+
+// 植物详情
+export interface PlantDetail extends Plant {
+  username: string
+  user_avatar?: string
+}
+
+// 用户统计
+export interface UserStats {
+  plant_count: number
+  total_records: number
+  water_count: number
+  fertilize_count: number
+}
