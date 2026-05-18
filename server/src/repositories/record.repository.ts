@@ -16,6 +16,8 @@ export interface CareRecord {
   image?: string
   images?: RecordImage[]
   created_at: string
+  username?: string  // 新增
+  user_avatar?: string  // 新增
 }
 
 function groupRecordsWithImages(rows: any[]): CareRecord[] {
@@ -222,6 +224,61 @@ export class CareRecordRepository {
       db.run('DELETE FROM care_records WHERE plant_id = ?', [plantId], function (err) {
         if (err) reject(err)
         else resolve((this.changes || 0) > 0)
+      })
+    })
+  }
+
+  // 新增获取所有用户养护记录的方法
+  findAllWithImages(limit = 15, offset = 0): Promise<CareRecord[]> {
+    return new Promise((resolve, reject) => {
+      const params: any[] = [limit, offset]
+
+      db.all(`
+        SELECT cr.*, p.name as plant_name, p.image as plant_image,
+               u.username as username, u.avatar as user_avatar,
+               ri.id as image_id, ri.image_path
+        FROM care_records cr
+        LEFT JOIN plants p ON cr.plant_id = p.id
+        LEFT JOIN users u ON cr.user_id = u.id
+        LEFT JOIN record_images ri ON cr.id = ri.record_id
+        ORDER BY cr.created_at DESC
+        LIMIT ? OFFSET ?
+      `, params, (err, rows: any) => {
+        if (err) {
+          console.error('SQL error:', err)
+          reject(err)
+        } else {
+          console.log('SQL rows:', rows.length)
+          resolve(groupRecordsWithImages(rows))
+        }
+      })
+    })
+  }
+
+  // 新增分页获取用户养护记录的方法
+  findByUserIdWithImagesPagination(userId: number, limit = 15, offset = 0): Promise<CareRecord[]> {
+    return new Promise((resolve, reject) => {
+      const params: any[] = [userId, limit, offset]
+
+      db.all(`
+        SELECT cr.*, p.name as plant_name, p.image as plant_image,
+               u.username as username, u.avatar as user_avatar,
+               ri.id as image_id, ri.image_path
+        FROM care_records cr
+        LEFT JOIN plants p ON cr.plant_id = p.id
+        LEFT JOIN users u ON cr.user_id = u.id
+        LEFT JOIN record_images ri ON cr.id = ri.record_id
+        WHERE cr.user_id = ?
+        ORDER BY cr.created_at DESC
+        LIMIT ? OFFSET ?
+      `, params, (err, rows: any) => {
+        if (err) {
+          console.error('SQL error:', err)
+          reject(err)
+        } else {
+          console.log('SQL rows:', rows.length)
+          resolve(groupRecordsWithImages(rows))
+        }
       })
     })
   }
