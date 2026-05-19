@@ -34,7 +34,9 @@ function groupRecordsWithImages(rows: any[]): CareRecord[] {
         type: row.type,
         description: row.description,
         created_at: row.created_at,
-        images: []
+        images: [],
+        username: row.username,
+        user_avatar: row.user_avatar
       })
     }
     if (row.image_id) {

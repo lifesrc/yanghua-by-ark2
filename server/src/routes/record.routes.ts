@@ -7,6 +7,7 @@ import { normalizeImage } from '../middleware/normalizeImage'
 const router = Router()
 
 router.use(authMiddleware)
+router.get('/all', recordController.getAllRecords.bind(recordController))
 router.get('/', recordController.getAll.bind(recordController))
 router.get('/date/:date', recordController.getByDate.bind(recordController))
 router.get('/:id', recordController.getById.bind(recordController))

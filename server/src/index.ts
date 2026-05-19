@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes'
 import plantRoutes from './routes/plant.routes'
 import recordRoutes from './routes/record.routes'
 import statsRoutes from './routes/stats.routes'
+import apiRoutes from './routes/index'
 
 const app = express()
 const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/plants', plantRoutes)
 app.use('/api/records', recordRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api', apiRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: '服务器运行正常' })
