@@ -26,7 +26,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { api } from '@/api'
+import request from '@/utils/request'
 import RecordCard from '@/components/RecordCard.vue'
 import type { SquareRecord } from '@/types'
 
@@ -46,7 +46,7 @@ const handleBack = () => {
 
 const getUsername = async () => {
   try {
-    const response = await api.get(`/users/${route.params.id}`)
+    const response = await request.get(`/users/${route.params.id}`)
     if (response.data.success && response.data.data) {
       username.value = response.data.data.username
     }
@@ -57,7 +57,7 @@ const getUsername = async () => {
 
 const onLoad = async () => {
   try {
-    const response = await api.get(`/users/${route.params.id}/records`, {
+    const response = await request.get(`/users/${route.params.id}/records`, {
       params: {
         limit,
         offset: offset.value

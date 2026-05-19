@@ -46,6 +46,8 @@ export interface CareRecord {
   image?: string
   images?: RecordImage[]
   created_at: string
+  username?: string // 新增
+  user_avatar?: string // 新增
 }
 
 export interface StatsSummary {

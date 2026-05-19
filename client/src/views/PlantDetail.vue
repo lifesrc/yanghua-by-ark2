@@ -44,10 +44,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { api } from '@/api'
+import request from '@/utils/request'
 import RecordCard from '@/components/RecordCard.vue'
 import type { PlantDetail, SquareRecord } from '@/types'
 import { PlantTypeLabels } from '@/types'
@@ -76,7 +76,7 @@ const goToUserProfile = () => {
 
 const getPlantDetail = async () => {
   try {
-    const response = await api.get(`/plants/${route.params.id}/detail`)
+    const response = await request.get(`/plants/${route.params.id}/detail`)
     if (response.data.success && response.data.data) {
       plant.value = response.data.data
     }
@@ -88,7 +88,7 @@ const getPlantDetail = async () => {
 
 const onLoad = async () => {
   try {
-    const response = await api.get(`/plants/${route.params.id}/records`, {
+    const response = await request.get(`/plants/${route.params.id}/records`, {
       params: {
         limit,
         offset: offset.value

@@ -57,7 +57,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { api } from '@/api'
+import request from '@/utils/request'
 import type { User } from '@/types'
 
 const route = useRoute()
@@ -99,7 +99,7 @@ const navigateToRecords = () => {
 
 const getUserInfo = async () => {
   try {
-    const response = await api.get(`/users/${route.params.id}`)
+    const response = await request.get(`/users/${route.params.id}`)
     if (response.data.success && response.data.data) {
       user.value = response.data.data
     }

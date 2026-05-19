@@ -97,9 +97,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import dayjs from 'dayjs'
-import type { SquareRecord, CareRecord, RecordImage } from '@/types'
+import type { SquareRecord, CareRecord } from '@/types'
 
 interface Props {
   record: SquareRecord | CareRecord

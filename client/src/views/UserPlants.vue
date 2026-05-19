@@ -25,7 +25,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { api } from '@/api'
+import request from '@/utils/request'
 import PlantCard from '@/components/PlantCard.vue'
 import type { Plant } from '@/types'
 
@@ -41,7 +41,7 @@ const handleBack = () => {
 
 const getPlants = async () => {
   try {
-    const response = await api.get(`/users/${route.params.id}/plants`)
+    const response = await request.get(`/users/${route.params.id}/plants`)
     if (response.data.success && response.data.data) {
       plants.value = response.data.data
     }
@@ -53,7 +53,7 @@ const getPlants = async () => {
 
 const getUsername = async () => {
   try {
-    const response = await api.get(`/users/${route.params.id}`)
+    const response = await request.get(`/users/${route.params.id}`)
     if (response.data.success && response.data.data) {
       username.value = response.data.data.username
     }
