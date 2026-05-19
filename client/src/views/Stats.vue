@@ -1,8 +1,14 @@
 <template>
   <div class="page-container stats-page">
+    <van-nav-bar
+      v-if="userId"
+      :title="`${username}的养护统计`"
+      left-arrow
+      @click-left="goBack"
+    />
     <div class="page-header">
-      <h1 class="page-title">养护统计</h1>
-      <p class="page-subtitle">见证你的用心照料</p>
+      <h1 class="page-title">{{ userId ? `${username}的养护统计` : '养护统计' }}</h1>
+      <p class="page-subtitle">{{ userId ? '查看其他用户的养护记录' : '见证你的用心照料' }}</p>
     </div>
 
     <div class="stats-grid">
@@ -48,12 +54,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
 import TabBar from '@/components/TabBar.vue'
 
+const route = useRoute()
+const router = useRouter()
+
 const chartRef = ref<HTMLElement | null>(null)
 const pieChartRef = ref<HTMLElement | null>(null)
+const userId = ref<string | null>(null)
+const username = ref('')
 const stats = ref({
   totalRecords: 0,
   waterCount: 0,
@@ -64,11 +76,42 @@ const trendData = ref<any[]>([])
 
 const fetchStats = async () => {
   try {
-    const res = await request.get('/stats/summary')
-    stats.value = res.data
+    let res
+    if (userId.value) {
+      res = await request.get(`/users/${userId.value}/stats`)
+      // 转换字段名
+      if (res.data && res.data.success) {
+        const data = res.data.data
+        stats.value = {
+          totalRecords: data.total_records || 0,
+          waterCount: data.water_count || 0,
+          fertilizeCount: data.fertilize_count || 0,
+          plantCount: data.plant_count || 0
+        }
+      }
+    } else {
+      res = await request.get('/stats/summary')
+      stats.value = res.data
+    }
   } catch (error) {
     console.error('获取统计数据失败', error)
   }
+}
+
+const getUsername = async () => {
+  if (!userId.value) return
+  try {
+    const res = await request.get(`/users/${userId.value}`)
+    if (res.data && res.data.success && res.data.data) {
+      username.value = res.data.data.username
+    }
+  } catch (error) {
+    console.error('获取用户信息失败', error)
+  }
+}
+
+const goBack = () => {
+  router.back()
 }
 
 const fetchTrend = async () => {
@@ -219,6 +262,12 @@ const renderPieChart = () => {
 }
 
 onMounted(async () => {
+  const idParam = route.params.id
+  if (idParam) {
+    userId.value = idParam as string
+  }
+
+  await getUsername()
   await fetchStats()
   await fetchTrend()
   await nextTick()

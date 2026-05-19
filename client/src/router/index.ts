@@ -37,6 +37,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/square',
+    name: 'Square',
+    component: () => import('@/views/Square.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/plant/:id',
+    name: 'PlantDetail',
+    component: () => import('@/views/PlantDetail.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/plant/add',
     name: 'PlantAdd',
     component: () => import('@/views/PlantForm.vue'),
@@ -46,6 +58,30 @@ const routes: RouteRecordRaw[] = [
     path: '/plant/edit/:id',
     name: 'PlantEdit',
     component: () => import('@/views/PlantForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/:id',
+    name: 'UserProfile',
+    component: () => import('@/views/UserProfile.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/:id/plants',
+    name: 'UserPlants',
+    component: () => import('@/views/UserPlants.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/:id/records',
+    name: 'UserRecords',
+    component: () => import('@/views/UserRecords.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/:id/stats',
+    name: 'UserStats',
+    component: () => import('@/views/Stats.vue'),
     meta: { requiresAuth: true }
   }
 ]
