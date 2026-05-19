@@ -2,16 +2,16 @@
   <div class="record-card" :class="layout">
     <!-- Social Layout: Avatar on left -->
     <template v-if="layout === 'social'">
-      <div class="card-avatar" v-if="showUser && record.user_avatar">
+      <div class="card-avatar clickable" v-if="showUser && record.user_avatar" @click="goToUserProfile">
         <img :src="record.user_avatar" class="avatar-img" />
       </div>
-      <div class="card-avatar-placeholder" v-else-if="showUser">
+      <div class="card-avatar-placeholder clickable" v-else-if="showUser" @click="goToUserProfile">
         {{ (record as SquareRecord).username?.charAt(0) || '?' }}
       </div>
 
       <div class="card-content">
         <div class="card-header">
-          <div class="user-info" v-if="showUser">
+          <div class="user-info clickable" v-if="showUser" @click="goToUserProfile">
             <span class="username">{{ (record as SquareRecord).username || '用户' }}</span>
           </div>
           <div class="meta-info">
@@ -98,6 +98,7 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs'
+import { useRouter } from 'vue-router'
 import type { SquareRecord, CareRecord } from '@/types'
 
 interface Props {
@@ -116,6 +117,15 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   previewImage: [images: string[], index: number]
 }>()
+
+const router = useRouter()
+
+const goToUserProfile = () => {
+  const record = props.record as SquareRecord
+  if (record.user_id) {
+    router.push(`/user/${record.user_id}`)
+  }
+}
 
 const formatTime = (time: string) => {
   return dayjs(time).format('MM-DD HH:mm')
@@ -171,6 +181,15 @@ const formatTime = (time: string) => {
       justify-content: center;
       flex-shrink: 0;
       box-shadow: 0 2px 8px rgba(143, 169, 143, 0.3);
+    }
+
+    .clickable {
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
     }
 
     .card-content {

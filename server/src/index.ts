@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes'
 import plantRoutes from './routes/plant.routes'
 import recordRoutes from './routes/record.routes'
 import statsRoutes from './routes/stats.routes'
+import userRoutes from './routes/user.routes'
 import apiRoutes from './routes/index'
 
 const app = express()
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/plants', plantRoutes)
 app.use('/api/records', recordRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/users', userRoutes)
 app.use('/api', apiRoutes)
 
 app.get('/api/health', (req, res) => {

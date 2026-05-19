@@ -1,15 +1,18 @@
-import { Response } from 'express'
-import { AuthRequest } from '../middleware/auth'
+import { Request, Response } from 'express'
 import userRepository from '../repositories/user.repository'
 
 export class UserController {
-  async getUserInfo(req: AuthRequest, res: Response) {
+  async getUserById(req: Request, res: Response) {
     try {
-      if (!req.user) {
-        return res.status(401).json({ success: false, error: '未登录' })
+      const userId = parseInt(req.params.id)
+      if (isNaN(userId)) {
+        return res.status(400).json({
+          success: false,
+          error: '无效的用户ID'
+        })
       }
 
-      const user = await userRepository.findById(parseInt(req.params.id))
+      const user = await userRepository.findById(userId)
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -29,13 +32,17 @@ export class UserController {
     }
   }
 
-  async getUserStats(req: AuthRequest, res: Response) {
+  async getUserStats(req: Request, res: Response) {
     try {
-      if (!req.user) {
-        return res.status(401).json({ success: false, error: '未登录' })
+      const userId = parseInt(req.params.id)
+      if (isNaN(userId)) {
+        return res.status(400).json({
+          success: false,
+          error: '无效的用户ID'
+        })
       }
 
-      const stats = await userRepository.getStats(parseInt(req.params.id))
+      const stats = await userRepository.getStats(userId)
 
       res.json({
         success: true,

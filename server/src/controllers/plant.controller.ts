@@ -61,6 +61,44 @@ export class PlantController {
     }
   }
 
+  async getPlantRecords(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: '未登录' })
+      }
+
+      const plantId = parseInt(req.params.id)
+      const limit = parseInt(req.query.limit as string) || 15
+      const offset = parseInt(req.query.offset as string) || 0
+
+      // 先获取植物信息，找到所属用户
+      const plant = await plantRepository.findById(plantId)
+      if (!plant) {
+        return res.status(404).json({
+          success: false,
+          error: '植物不存在'
+        })
+      }
+
+      const records = await recordRepository.findByUserIdWithImagesPagination(
+        plant.user_id,
+        limit,
+        offset,
+        plantId
+      )
+
+      res.json({
+        success: true,
+        data: records
+      })
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      })
+    }
+  }
+
   async getAll(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {

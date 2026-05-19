@@ -14,41 +14,38 @@
     </div>
 
     <div class="nav-cards">
-      <van-card
+      <div
         class="nav-card"
-        :border="false"
         @click="navigateToStats"
       >
         <div class="nav-item">
           <span class="nav-icon">📊</span>
           <span class="nav-text">我的统计</span>
-          <van-icon name="arrow" class="nav-arrow" />
+          <span class="nav-arrow">→</span>
         </div>
-      </van-card>
+      </div>
 
-      <van-card
+      <div
         class="nav-card"
-        :border="false"
         @click="navigateToPlants"
       >
         <div class="nav-item">
           <span class="nav-icon">🌱</span>
           <span class="nav-text">我的植物</span>
-          <van-icon name="arrow" class="nav-arrow" />
+          <span class="nav-arrow">→</span>
         </div>
-      </van-card>
+      </div>
 
-      <van-card
+      <div
         class="nav-card"
-        :border="false"
         @click="navigateToRecords"
       >
         <div class="nav-item">
           <span class="nav-icon">📝</span>
           <span class="nav-text">养护记录</span>
-          <van-icon name="arrow" class="nav-arrow" />
+          <span class="nav-arrow">→</span>
         </div>
-      </van-card>
+      </div>
     </div>
   </div>
 </template>
@@ -59,9 +56,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import request from '@/utils/request'
 import type { User } from '@/types'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const user = ref<User | null>(null)
 const defaultAvatar = 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&h=200&fit=crop'
@@ -99,9 +98,35 @@ const navigateToRecords = () => {
 
 const getUserInfo = async () => {
   try {
-    const response = await request.get(`/users/${route.params.id}`)
-    if (response.data.success && response.data.data) {
-      user.value = response.data.data
+    console.log('authStore.token:', !!authStore.token)
+    console.log('authStore.user:', authStore.user)
+
+    // 判断是访问自己的页面还是他人的页面
+    if (route.path === '/my') {
+      if (!authStore.user) {
+        // 如果authStore中没有用户信息，先调用接口获取
+        console.log('authStore.user 为 null，调用 fetchUserInfo')
+        await authStore.fetchUserInfo()
+      }
+
+      if (authStore.user) {
+        const response = await request.get(`/users/${authStore.user.id}`)
+        console.log('获取用户信息响应:', response)
+        if (response.success && response.data) {
+          user.value = response.data
+        }
+      } else {
+        console.error('authStore.user 仍然为 null')
+        showToast('无法获取用户信息，请重新登录')
+      }
+    } else if (route.params.id) {
+      // 如果是访问他人的页面，通过用户ID获取信息
+      const response = await request.get(`/users/${route.params.id}`)
+      if (response.success && response.data) {
+        user.value = response.data
+      }
+    } else {
+      showToast('无法获取用户信息')
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
@@ -185,5 +210,6 @@ onMounted(() => {
 
 .nav-arrow {
   color: #999;
+  font-size: 18px;
 }
 </style>

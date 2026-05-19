@@ -239,12 +239,15 @@ export class CareRecordRepository {
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
                u.username as username, u.avatar as user_avatar,
                ri.id as image_id, ri.image_path
-        FROM care_records cr
+        FROM (
+          SELECT * FROM care_records
+          ORDER BY created_at DESC
+          LIMIT ? OFFSET ?
+        ) cr
         LEFT JOIN plants p ON cr.plant_id = p.id
         LEFT JOIN users u ON cr.user_id = u.id
         LEFT JOIN record_images ri ON cr.id = ri.record_id
         ORDER BY cr.created_at DESC
-        LIMIT ? OFFSET ?
       `, params, (err, rows: any) => {
         if (err) {
           console.error('SQL error:', err)
@@ -258,21 +261,32 @@ export class CareRecordRepository {
   }
 
   // 新增分页获取用户养护记录的方法
-  findByUserIdWithImagesPagination(userId: number, limit = 15, offset = 0): Promise<CareRecord[]> {
+  findByUserIdWithImagesPagination(userId: number, limit = 15, offset = 0, plantId?: number): Promise<CareRecord[]> {
     return new Promise((resolve, reject) => {
-      const params: any[] = [userId, limit, offset]
+      const params: any[] = [userId]
+      let whereClause = 'WHERE user_id = ?'
+
+      if (plantId !== undefined) {
+        whereClause += ' AND plant_id = ?'
+        params.push(plantId)
+      }
+
+      params.push(limit, offset)
 
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
                u.username as username, u.avatar as user_avatar,
                ri.id as image_id, ri.image_path
-        FROM care_records cr
+        FROM (
+          SELECT * FROM care_records
+          ${whereClause}
+          ORDER BY created_at DESC
+          LIMIT ? OFFSET ?
+        ) cr
         LEFT JOIN plants p ON cr.plant_id = p.id
         LEFT JOIN users u ON cr.user_id = u.id
         LEFT JOIN record_images ri ON cr.id = ri.record_id
-        WHERE cr.user_id = ?
         ORDER BY cr.created_at DESC
-        LIMIT ? OFFSET ?
       `, params, (err, rows: any) => {
         if (err) {
           console.error('SQL error:', err)

@@ -107,6 +107,7 @@ const onLoad = async () => {
   } catch (error) {
     console.error('获取记录失败:', error)
     showToast('获取记录失败')
+    finished.value = true
   } finally {
     loading.value = false
   }

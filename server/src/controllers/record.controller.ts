@@ -25,6 +25,10 @@ export class RecordController {
 
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 15
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0
+
+      // 模拟 2 秒加载延迟，展示前端加载效果
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       const records = await recordRepository.findAllWithImages(limit, offset)
 
       res.json({
