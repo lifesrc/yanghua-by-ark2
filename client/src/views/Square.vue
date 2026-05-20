@@ -2,7 +2,7 @@
   <div class="page-container square-page">
     <van-nav-bar title="广场" fixed placeholder />
 
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
+    <!-- <van-pull-refresh v-model="refreshing" @refresh="onRefresh"> -->
       <van-list
         v-model:loading="loading"
         :finished="finished"
@@ -22,7 +22,7 @@
           />
         </div>
       </van-list>
-    </van-pull-refresh>
+    <!-- </van-pull-refresh> -->
 
     <van-image-preview v-model:show="showPreview" :images="previewImages" :start-position="previewIndex" />
 
