@@ -89,6 +89,12 @@ const routes: RouteRecordRaw[] = [
     name: 'UserStats',
     component: () => import('@/views/Stats.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/pull',
+    name: 'PullRefreshTest',
+    component: () => import('@/views/PullRefreshTest.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 
