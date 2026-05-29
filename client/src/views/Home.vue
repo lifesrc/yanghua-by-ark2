@@ -106,9 +106,13 @@
               :key="img.id"
               class="record-image-wrapper"
               :class="{ 'image-more': index === 3 && record.images.length > 4 }"
-              @click="previewImages(record.images!.map(i => i.image_path), index)"
+              @click="previewMedia(record.images!, index)"
             >
-              <img :src="img.image_path" class="record-image" />
+              <img v-if="img.file_type !== 'video'" :src="img.image_path" class="record-image" />
+              <div v-else class="video-wrapper">
+                <video :src="img.image_path" class="record-image video-thumbnail" poster="" muted loop playsinline></video>
+                <div class="video-play-icon">▶</div>
+              </div>
               <span v-if="index === 3 && record.images.length > 4" class="image-count">
                 +{{ record.images.length - 3 }}
               </span>
@@ -149,9 +153,13 @@
                   v-for="(img, index) in careForm.images"
                   :key="index"
                   class="image-grid-item"
-                  @click="previewImages(careForm.images.map(i => i.url), index)"
+                  @click="img.file_type === 'video' ? previewCareMedia(index) : previewImages(careForm.images.filter(i => i.file_type !== 'video').map(i => i.url), careForm.images.filter(i => i.file_type !== 'video').findIndex(i => i === img))"
                 >
-                  <img :src="img.url" class="grid-image" />
+                  <img v-if="img.file_type !== 'video'" :src="img.url" class="grid-image" />
+                  <div v-else class="video-preview-wrapper">
+                    <video :src="img.url" class="grid-image video-preview" muted playsinline></video>
+                    <div class="video-play-icon-overlay">▶</div>
+                  </div>
                   <div class="image-overlay">
                     <van-icon name="cross" class="remove-btn" @click.stop="removeImage(index)" />
                   </div>
@@ -168,12 +176,12 @@
                 </div>
               </div>
             </div>
-            <p class="image-tip">点击图片可放大查看，最多上传9张</p>
+            <p class="image-tip">点击图片/视频可查看，最多上传9张，支持10MB以内的视频</p>
           </div>
           <input
             ref="fileInputRef"
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             multiple
             style="display: none"
             @change="handleFileChange"
@@ -412,20 +420,23 @@
     </van-popup>
 
     <van-image-preview v-model:show="showImagePreview" :images="currentPreviewImages" :start-position="currentPreviewIndex" />
+    
+    <MediaPreview v-model:show="showMediaPreview" :media="currentPreviewMedia" :start-index="currentPreviewIndex" :key="`${currentPreviewMedia.length}-${currentPreviewIndex}`" />
 
     <TabBar />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { usePlantStore } from '@/stores/plant'
-import { PlantTypeLabels, type Plant, type CareRecord, type PlantType } from '@/types'
+import { PlantTypeLabels, type Plant, type CareRecord, type PlantType, type RecordImage } from '@/types'
 import request from '@/utils/request'
 import dayjs from 'dayjs'
 import TabBar from '@/components/TabBar.vue'
+import MediaPreview from '@/components/MediaPreview.vue'
 import { showConfirmDialog, showToast } from 'vant'
 import { normalizeImageFile } from '@/utils/image'
 
@@ -443,7 +454,9 @@ const showEditPlant = ref(false)
 const showTypePicker = ref(false)
 const showEditTypePicker = ref(false)
 const showImagePreview = ref(false)
+const showMediaPreview = ref(false)
 const currentPreviewImages = ref<string[]>([])
+const currentPreviewMedia = ref<RecordImage[]>([])
 const currentPreviewIndex = ref(0)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const plantFileInputRef = ref<HTMLInputElement | null>(null)
@@ -454,7 +467,7 @@ const defaultPlantImage = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_im
 const editingRecord = ref<CareRecord | null>(null)
 const careForm = ref({
   description: '',
-  images: [] as { url: string; file?: File; id?: number }[]
+  images: [] as { url: string; file?: File; id?: number; file_type?: string }[]
 })
 
 const newPlantForm = ref({
@@ -531,7 +544,7 @@ const openEditRecord = (record: CareRecord) => {
   careType.value = record.type
   careForm.value = {
     description: record.description || '',
-    images: record.images?.map(img => ({ id: img.id, url: img.image_path })) || []
+    images: record.images?.map(img => ({ id: img.id, url: img.image_path, file_type: img.file_type || 'image' })) || []
   }
   showCareModal.value = true
 }
@@ -616,12 +629,12 @@ const handleFileChange = async (e: Event) => {
   const files = Array.from(input.files || [])
   if (files.length === 0) return
 
-  const maxImages = 9
+  const maxFiles = 9
   const currentCount = careForm.value.images.length
-  const remainingSlots = maxImages - currentCount
+  const remainingSlots = maxFiles - currentCount
 
   if (remainingSlots <= 0) {
-    showToast(`最多只能上传${maxImages}张图片`)
+    showToast(`最多只能上传${maxFiles}个文件`)
     input.value = ''
     return
   }
@@ -632,17 +645,19 @@ const handleFileChange = async (e: Event) => {
   try {
     for (const raw of filesToProcess) {
       const file = await normalizeImageFile(raw)
+      const isVideo = raw.type.startsWith('video/')
       careForm.value.images.push({
         url: URL.createObjectURL(file),
-        file
+        file,
+        file_type: isVideo ? 'video' : 'image'
       })
     }
     if (skippedCount > 0) {
-      showToast(`已选择前${filesToProcess.length}张图片，最多${maxImages}张`)
+      showToast(`已选择前${filesToProcess.length}个文件，最多${maxFiles}个`)
     }
   } catch (err) {
-    console.error('图片处理失败', err)
-    showToast('图片处理失败，请换一张')
+    console.error('文件处理失败', err)
+    showToast('文件处理失败，请换一个')
   } finally {
     input.value = ''
   }
@@ -820,6 +835,37 @@ const previewImages = (images: string[], index: number = 0) => {
   currentPreviewImages.value = images
   currentPreviewIndex.value = index
   showImagePreview.value = true
+}
+
+const previewCareMedia = (index: number) => {
+  currentPreviewMedia.value = careForm.value.images.map(img => ({
+    id: img.id || 0,
+    record_id: 0,
+    image_path: img.url,
+    file_type: img.file_type || 'image',
+    created_at: ''
+  }))
+  currentPreviewIndex.value = index
+  showMediaPreview.value = true
+}
+
+const previewMedia = (media: RecordImage[], index: number = 0) => {
+  const hasVideo = media.some(item => item.file_type === 'video')
+  if (hasVideo) {
+    currentPreviewMedia.value = media
+    currentPreviewIndex.value = index
+    nextTick(() => {
+      showMediaPreview.value = true
+    })
+  } else {
+    currentPreviewImages.value = media.map(item => item.image_path)
+    currentPreviewIndex.value = index
+    showImagePreview.value = true
+  }
+}
+
+const getVideoThumbnail = (videoPath: string) => {
+  return videoPath
 }
 
 const logout = async () => {
@@ -1313,6 +1359,36 @@ onMounted(async () => {
             object-fit: cover;
           }
 
+          .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+          }
+
+          .video-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.8);
+          }
+
+          .video-play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #8FA98F;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          }
+
           .image-count {
             position: absolute;
             inset: 0;
@@ -1505,6 +1581,36 @@ onMounted(async () => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+        }
+
+        .video-preview-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+
+          .video-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.8);
+          }
+
+          .video-play-icon-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #8FA98F;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          }
         }
 
         .remove-btn {

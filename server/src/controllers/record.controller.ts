@@ -177,7 +177,8 @@ export class RecordController {
         const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat()
         for (const file of files) {
           const imagePath = `/uploads/${file.filename}`
-          await recordRepository.addImage(recordId, imagePath)
+          const fileType = file.mimetype.startsWith('video/') ? 'video' : 'image'
+          await recordRepository.addImage(recordId, imagePath, fileType)
         }
       }
 
@@ -242,7 +243,8 @@ export class RecordController {
         const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat()
         for (const file of files) {
           const imagePath = `/uploads/${file.filename}`
-          await recordRepository.addImage(recordId, imagePath)
+          const fileType = file.mimetype.startsWith('video/') ? 'video' : 'image'
+          await recordRepository.addImage(recordId, imagePath, fileType)
         }
       }
 

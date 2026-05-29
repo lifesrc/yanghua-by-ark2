@@ -7,12 +7,16 @@ export const runMigrations = () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       record_id INTEGER NOT NULL,
       image_path VARCHAR(255) NOT NULL,
+      file_type VARCHAR(20) DEFAULT 'image',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (record_id) REFERENCES care_records(id) ON DELETE CASCADE
     );
 
     -- 创建索引
     CREATE INDEX IF NOT EXISTS idx_record_images_record_id ON record_images(record_id);
+    
+    -- 添加 file_type 列（如果已存在会报错，但不影响其他操作）
+    ALTER TABLE record_images ADD COLUMN file_type VARCHAR(20) DEFAULT 'image';
   `
 
   db.exec(migrations, (err) => {

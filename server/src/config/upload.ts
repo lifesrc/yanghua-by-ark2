@@ -24,9 +24,14 @@ export const upload = multer({
     fileSize: 10 * 1024 * 1024
   },
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i.test(file.originalname)) {
+    if (
+      file.mimetype.startsWith('image/') || 
+      /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|avif)$/i.test(file.originalname) ||
+      file.mimetype.startsWith('video/') ||
+      /\.(mp4|webm|ogg|mov|avi|mkv|flv|wmv)$/i.test(file.originalname)
+    ) {
       return cb(null, true)
     }
-    cb(new Error('只允许上传图片文件'))
+    cb(new Error('只允许上传图片或视频文件'))
   }
 })

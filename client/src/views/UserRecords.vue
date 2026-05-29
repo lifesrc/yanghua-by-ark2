@@ -1,6 +1,8 @@
 <template>
   <div class="page-container user-records-page">
     <van-nav-bar :title="`${username}的养护记录`" left-arrow @click-left="handleBack" />
+    <MediaPreview v-model:show="showMediaPreview" :media="currentPreviewMedia" :start-index="currentPreviewIndex" :key="`${currentPreviewMedia.length}-${currentPreviewIndex}`" />
+    <van-image-preview v-model:show="showImagePreview" :images="currentPreviewImages" :start-position="currentPreviewIndex" />
 
     <div class="records-section">
       <van-list
@@ -16,6 +18,7 @@
           :show-user="false"
           :show-plant="true"
           layout="timeline"
+          @preview-image="previewMedia"
         />
       </van-list>
     </div>
@@ -28,7 +31,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import request from '@/utils/request'
 import RecordCard from '@/components/RecordCard.vue'
-import type { SquareRecord } from '@/types'
+import MediaPreview from '@/components/MediaPreview.vue'
+import type { SquareRecord, RecordImage } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +43,12 @@ const finished = ref(false)
 const offset = ref(0)
 const limit = 15
 const username = ref('')
+
+const showMediaPreview = ref(false)
+const showImagePreview = ref(false)
+const currentPreviewMedia = ref<RecordImage[]>([])
+const currentPreviewImages = ref<string[]>([])
+const currentPreviewIndex = ref(0)
 
 const handleBack = () => {
   router.back()
@@ -52,6 +62,19 @@ const getUsername = async () => {
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
+  }
+}
+
+const previewMedia = (media: RecordImage[], index: number = 0) => {
+  const hasVideo = media.some(item => item.file_type === 'video')
+  if (hasVideo) {
+    currentPreviewMedia.value = media
+    currentPreviewIndex.value = index
+    showMediaPreview.value = true
+  } else {
+    currentPreviewImages.value = media.map(item => item.image_path)
+    currentPreviewIndex.value = index
+    showImagePreview.value = true
   }
 }
 

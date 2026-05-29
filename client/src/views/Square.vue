@@ -2,13 +2,13 @@
   <div class="page-container square-page">
     <van-nav-bar title="广场" fixed placeholder />
 
-    <!-- <van-pull-refresh v-model="refreshing" @refresh="onRefresh"> -->
+    <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
       <van-list
         v-model:loading="loading"
         :finished="finished"
         finished-text="没有更多了"
-        @load="onLoad"
-        offset="10"
+        @load="fetchRecords(false)"
+        offset="0"
       >
         <div class="records-list">
           <RecordCard
@@ -22,9 +22,10 @@
           />
         </div>
       </van-list>
-    <!-- </van-pull-refresh> -->
+    </van-pull-refresh>
 
-    <van-image-preview v-model:show="showPreview" :images="previewImages" :start-position="previewIndex" />
+    <MediaPreview v-model:show="showPreview" :media="previewMedia" :start-index="previewIndex" :key="`${previewMedia.length}-${previewIndex}`" />
+    <van-image-preview v-model:show="showImagePreview" :images="previewImages" :start-position="previewIndex" />
 
     <TabBar />
   </div>
@@ -34,9 +35,10 @@
 import { ref } from 'vue'
 import { showToast } from 'vant'
 import request from '@/utils/request'
-import type { SquareRecord } from '@/types'
+import type { SquareRecord, RecordImage } from '@/types'
 import TabBar from '@/components/TabBar.vue'
 import RecordCard from '@/components/RecordCard.vue'
+import MediaPreview from '@/components/MediaPreview.vue'
 
 const PAGE_SIZE = 10
 const records = ref<SquareRecord[]>([])
@@ -44,6 +46,8 @@ const loading = ref(false)
 const finished = ref(false)
 const refreshing = ref(false)
 const showPreview = ref(false)
+const showImagePreview = ref(false)
+const previewMedia = ref<RecordImage[]>([])
 const previewImages = ref<string[]>([])
 const previewIndex = ref(0)
 
@@ -68,12 +72,9 @@ const fetchRecords = async (isRefresh = false) => {
   } catch (error) {
     showToast('加载失败，请稍后重试')
     console.error('加载记录失败:', error)
+  } finally {
+    loading.value = false
   }
-}
-
-const onLoad = async () => {
-  await fetchRecords(false)
-  loading.value = false
 }
 
 const onRefresh = async () => {
@@ -82,10 +83,17 @@ const onRefresh = async () => {
   refreshing.value = false
 }
 
-const handlePreviewImage = (images: string[], index: number) => {
-  previewImages.value = images
-  previewIndex.value = index
-  showPreview.value = true
+const handlePreviewImage = (media: RecordImage[], index: number) => {
+  const hasVideo = media.some(item => item.file_type === 'video')
+  if (hasVideo) {
+    previewMedia.value = media
+    previewIndex.value = index
+    showPreview.value = true
+  } else {
+    previewImages.value = media.map(item => item.image_path)
+    previewIndex.value = index
+    showImagePreview.value = true
+  }
 }
 </script>
 

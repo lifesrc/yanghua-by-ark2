@@ -34,9 +34,13 @@
             :key="img.id"
             class="image-wrapper"
             :class="{ 'image-more': index === 3 && record.images!.length > 4 }"
-            @click="$emit('previewImage', record.images!.map(i => i.image_path), index)"
+            @click="$emit('previewImage', record.images!, index)"
           >
-            <img :src="img.image_path" class="record-image" />
+            <img v-if="!img.file_type || img.file_type === 'image'" :src="img.image_path" class="record-image" />
+            <template v-else-if="img.file_type === 'video'">
+              <video :src="img.image_path" class="record-image" poster="" loop muted playsinline></video>
+              <div class="video-play-icon">▶</div>
+            </template>
             <span v-if="index === 3 && record.images!.length > 4" class="image-count">
               +{{ record.images!.length - 3 }}
             </span>
@@ -79,9 +83,13 @@
             :key="img.id"
             class="image-wrapper"
             :class="{ 'image-more': index === 2 && record.images!.length > 3 }"
-            @click="$emit('previewImage', record.images!.map(i => i.image_path), index)"
+            @click="$emit('previewImage', record.images!, index)"
           >
-            <img :src="img.image_path" class="record-image" />
+            <img v-if="!img.file_type || img.file_type === 'image'" :src="img.image_path" class="record-image" />
+            <template v-else-if="img.file_type === 'video'">
+              <video :src="img.image_path" class="record-image" poster="" loop muted playsinline></video>
+              <div class="video-play-icon">▶</div>
+            </template>
             <span v-if="index === 2 && record.images!.length > 3" class="image-count">
               +{{ record.images!.length - 2 }}
             </span>
@@ -99,7 +107,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
 import { useRouter } from 'vue-router'
-import type { SquareRecord, CareRecord } from '@/types'
+import type { SquareRecord, CareRecord, RecordImage } from '@/types'
 
 interface Props {
   record: SquareRecord | CareRecord
@@ -115,7 +123,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  previewImage: [images: string[], index: number]
+  previewImage: [images: RecordImage[], index: number]
 }>()
 
 const router = useRouter()
@@ -302,6 +310,23 @@ const formatTime = (time: string) => {
           font-weight: 700;
           backdrop-filter: blur(2px);
         }
+
+        .video-play-icon {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 32px;
+          height: 32px;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          color: #8FA98F;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
       }
     }
 
@@ -441,6 +466,23 @@ const formatTime = (time: string) => {
           font-size: 14px;
           font-weight: 700;
           backdrop-filter: blur(2px);
+        }
+
+        .video-play-icon {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 28px;
+          height: 28px;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          color: #8FA98F;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
       }
     }

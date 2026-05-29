@@ -3,6 +3,7 @@ import db from '../config/database'
 export interface RecordImage {
   id: number
   image_path: string
+  file_type?: string
 }
 
 export interface CareRecord {
@@ -42,7 +43,8 @@ function groupRecordsWithImages(rows: any[]): CareRecord[] {
     if (row.image_id) {
       recordMap.get(row.id)!.images!.push({
         id: row.image_id,
-        image_path: row.image_path
+        image_path: row.image_path,
+        file_type: row.file_type
       })
     }
   })
@@ -68,7 +70,7 @@ export class CareRecordRepository {
       
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
-               ri.id as image_id, ri.image_path
+               ri.id as image_id, ri.image_path, ri.file_type
         FROM care_records cr
         LEFT JOIN plants p ON cr.plant_id = p.id
         LEFT JOIN record_images ri ON cr.id = ri.record_id
@@ -95,7 +97,7 @@ export class CareRecordRepository {
     return new Promise((resolve, reject) => {
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
-               ri.id as image_id, ri.image_path
+               ri.id as image_id, ri.image_path, ri.file_type
         FROM care_records cr
         LEFT JOIN plants p ON cr.plant_id = p.id
         LEFT JOIN record_images ri ON cr.id = ri.record_id
@@ -116,7 +118,7 @@ export class CareRecordRepository {
     return new Promise((resolve, reject) => {
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
-               ri.id as image_id, ri.image_path
+               ri.id as image_id, ri.image_path, ri.file_type
         FROM care_records cr
         LEFT JOIN plants p ON cr.plant_id = p.id
         LEFT JOIN record_images ri ON cr.id = ri.record_id
@@ -191,12 +193,12 @@ export class CareRecordRepository {
     })
   }
 
-  addImage(recordId: number, imagePath: string): Promise<number> {
+  addImage(recordId: number, imagePath: string, fileType: string = 'image'): Promise<number> {
     return new Promise((resolve, reject) => {
       db.run(`
-        INSERT INTO record_images (record_id, image_path)
-        VALUES (?, ?)
-      `, [recordId, imagePath], function (err) {
+        INSERT INTO record_images (record_id, image_path, file_type)
+        VALUES (?, ?, ?)
+      `, [recordId, imagePath, fileType], function (err) {
         if (err) reject(err)
         else resolve(this.lastID as number)
       })
@@ -238,7 +240,7 @@ export class CareRecordRepository {
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
                u.username as username, u.avatar as user_avatar,
-               ri.id as image_id, ri.image_path
+               ri.id as image_id, ri.image_path, ri.file_type
         FROM (
           SELECT * FROM care_records
           ORDER BY created_at DESC
@@ -276,7 +278,7 @@ export class CareRecordRepository {
       db.all(`
         SELECT cr.*, p.name as plant_name, p.image as plant_image,
                u.username as username, u.avatar as user_avatar,
-               ri.id as image_id, ri.image_path
+               ri.id as image_id, ri.image_path, ri.file_type
         FROM (
           SELECT * FROM care_records
           ${whereClause}

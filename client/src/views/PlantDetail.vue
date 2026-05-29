@@ -1,6 +1,8 @@
 <template>
   <div class="page-container plant-detail-page">
     <van-nav-bar title="植物详情" left-arrow @click-left="handleBack" />
+    <MediaPreview v-model:show="showMediaPreview" :media="currentPreviewMedia" :start-index="currentPreviewIndex" :key="`${currentPreviewMedia.length}-${currentPreviewIndex}`" />
+    <van-image-preview v-model:show="showImagePreview" :images="currentPreviewImages" :start-position="currentPreviewIndex" />
 
     <div class="plant-info-section" v-if="plant">
       <div class="plant-image-wrapper">
@@ -37,6 +39,7 @@
           :show-user="false"
           :show-plant="false"
           layout="timeline"
+          @preview-image="previewMedia"
         />
       </van-list>
     </div>
@@ -49,7 +52,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import request from '@/utils/request'
 import RecordCard from '@/components/RecordCard.vue'
-import type { PlantDetail, SquareRecord } from '@/types'
+import MediaPreview from '@/components/MediaPreview.vue'
+import type { PlantDetail, SquareRecord, RecordImage } from '@/types'
 import { PlantTypeLabels } from '@/types'
 
 const route = useRoute()
@@ -61,6 +65,12 @@ const loading = ref(false)
 const finished = ref(false)
 const offset = ref(0)
 const limit = 15
+
+const showMediaPreview = ref(false)
+const showImagePreview = ref(false)
+const currentPreviewMedia = ref<RecordImage[]>([])
+const currentPreviewImages = ref<string[]>([])
+const currentPreviewIndex = ref(0)
 
 const defaultPlantImage = 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=200&h=200&fit=crop'
 
@@ -74,11 +84,24 @@ const goToUserProfile = () => {
   }
 }
 
+const previewMedia = (media: RecordImage[], index: number = 0) => {
+  const hasVideo = media.some(item => item.file_type === 'video')
+  if (hasVideo) {
+    currentPreviewMedia.value = media
+    currentPreviewIndex.value = index
+    showMediaPreview.value = true
+  } else {
+    currentPreviewImages.value = media.map(item => item.image_path)
+    currentPreviewIndex.value = index
+    showImagePreview.value = true
+  }
+}
+
 const getPlantDetail = async () => {
   try {
     const response = await request.get(`/plants/${route.params.id}/detail`)
-    if (response.data.success && response.data.data) {
-      plant.value = response.data.data
+    if (response.success && response.data) {
+      plant.value = response.data
     }
   } catch (error) {
     console.error('获取植物详情失败:', error)
@@ -94,9 +117,8 @@ const onLoad = async () => {
         offset: offset.value
       }
     })
-
-    if (response.data.success && response.data.data) {
-      const newRecords = response.data.data
+    if (response.success && response.data) {
+      const newRecords = response.data
       records.value.push(...newRecords)
       offset.value += limit
 
@@ -115,7 +137,6 @@ const onLoad = async () => {
 
 onMounted(() => {
   getPlantDetail()
-  onLoad()
 })
 </script>
 

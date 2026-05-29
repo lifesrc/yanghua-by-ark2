@@ -32,6 +32,7 @@ export interface RecordImage {
   id: number
   record_id: number
   image_path: string
+  file_type?: string
   created_at: string
 }
 
