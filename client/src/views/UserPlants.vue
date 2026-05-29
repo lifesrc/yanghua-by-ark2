@@ -42,8 +42,8 @@ const handleBack = () => {
 const getPlants = async () => {
   try {
     const response = await request.get(`/users/${route.params.id}/plants`)
-    if (response.data.success && response.data.data) {
-      plants.value = response.data.data
+    if (response.success && response.data) {
+      plants.value = response.data
     }
   } catch (error) {
     console.error('获取植物列表失败:', error)
@@ -54,8 +54,8 @@ const getPlants = async () => {
 const getUsername = async () => {
   try {
     const response = await request.get(`/users/${route.params.id}`)
-    if (response.data.success && response.data.data) {
-      username.value = response.data.data.username
+    if (response.success && response.data) {
+      username.value = response.data.username
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)

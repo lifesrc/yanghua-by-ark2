@@ -47,8 +47,8 @@ const handleBack = () => {
 const getUsername = async () => {
   try {
     const response = await request.get(`/users/${route.params.id}`)
-    if (response.data.success && response.data.data) {
-      username.value = response.data.data.username
+    if (response.success && response.data) {
+      username.value = response.data.username
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
@@ -64,8 +64,8 @@ const onLoad = async () => {
       }
     })
 
-    if (response.data.success && response.data.data) {
-      const newRecords = response.data.data
+    if (response.success && response.data) {
+      const newRecords = response.data
       records.value.push(...newRecords)
       offset.value += limit
 
