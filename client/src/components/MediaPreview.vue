@@ -378,7 +378,7 @@ watch(swipeIndex, (newIndex, oldIndex) => {
 
       .progress-fill {
         position: absolute;
-        top: 20px;
+        top: 0;
         left: 0;
         height: 100%;
         background: #8FA98F;
