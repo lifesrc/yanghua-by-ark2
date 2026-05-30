@@ -162,10 +162,73 @@ const seekVideo = (e: MouseEvent) => {
   video.currentTime = percent * video.duration
 }
 
+const pauseAllVideos = () => {
+  videoRefs.value.forEach(video => {
+    if (video) {
+      video.pause()
+    }
+  })
+}
+
+const autoPlayCurrentVideo = () => {
+  const currentMedia = props.media[swipeIndex.value]
+  if (currentMedia?.file_type === 'video') {
+    setTimeout(() => {
+      const video = videoRefs.value[swipeIndex.value]
+      if (video) {
+        video.play().catch(() => {})
+      }
+    }, 100)
+  }
+}
+
+const onSwipeChange = (index: number) => {
+  pauseAllVideos()
+  swipeIndex.value = index
+  
+  const currentMedia = props.media[index]
+  if (currentMedia?.file_type === 'video') {
+    setTimeout(() => {
+      const video = videoRefs.value[index]
+      if (video) {
+        video.play().catch(() => {})
+      }
+    }, 100)
+  }
+}
+
+const goPrev = () => {
+  if (swipeIndex.value > 0) {
+    swipeIndex.value--
+  }
+}
+
+const goNext = () => {
+  if (swipeIndex.value < props.media.length - 1) {
+    swipeIndex.value++
+  }
+}
+
+const togglePlay = (index: number) => {
+  const currentVideo = videoRefs.value[index]
+  if (currentVideo) {
+    if (currentVideo.paused) {
+      currentVideo.play()
+    } else {
+      currentVideo.pause()
+    }
+  }
+}
+
 watch(() => props.show, (newVal) => {
   if (newVal) {
     swipeIndex.value = props.startIndex
     swipeRef.value?.swipeTo(props.startIndex)
+    setTimeout(() => {
+      autoPlayCurrentVideo()
+    }, 200)
+  } else {
+    pauseAllVideos()
   }
 }, { immediate: true })
 
@@ -198,42 +261,6 @@ watch(swipeIndex, (newIndex, oldIndex) => {
   }
   pauseAllVideos()
 })
-
-const onSwipeChange = (index: number) => {
-  pauseAllVideos()
-  swipeIndex.value = index
-}
-
-const pauseAllVideos = () => {
-  videoRefs.value.forEach(video => {
-    if (video) {
-      video.pause()
-    }
-  })
-}
-
-const goPrev = () => {
-  if (swipeIndex.value > 0) {
-    swipeIndex.value--
-  }
-}
-
-const goNext = () => {
-  if (swipeIndex.value < props.media.length - 1) {
-    swipeIndex.value++
-  }
-}
-
-const togglePlay = (index: number) => {
-  const currentVideo = videoRefs.value[index]
-  if (currentVideo) {
-    if (currentVideo.paused) {
-      currentVideo.play()
-    } else {
-      currentVideo.pause()
-    }
-  }
-}
 </script>
 
 <style scoped lang="scss">
@@ -351,7 +378,7 @@ const togglePlay = (index: number) => {
 
       .progress-fill {
         position: absolute;
-        top: 0;
+        top: 20px;
         left: 0;
         height: 100%;
         background: #8FA98F;
