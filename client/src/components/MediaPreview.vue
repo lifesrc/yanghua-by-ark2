@@ -1,6 +1,11 @@
 
 <template>
-  <van-popup v-model:show="visible" position="center" :style="{ background: 'rgba(0, 0, 0, 0.9)' }">
+  <van-popup 
+    v-model:show="visible" 
+    :close-on-click-overlay="false"
+    position="top"
+    :style="{ background: 'rgba(0,0,0,0.9)', padding: '0', boxShadow: 'none', height: '100%' }"
+  >
     <div class="media-preview">
       <van-icon name="cross" class="close-btn" @click="visible = false" />
       
@@ -72,7 +77,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { RecordImage } from '@/types'
-import { Swipe as VanSwipe, SwipeItem as VanSwipeItem } from 'vant'
 
 interface Props {
   show: boolean
@@ -224,11 +228,13 @@ watch(() => props.show, (newVal) => {
   if (newVal) {
     swipeIndex.value = props.startIndex
     swipeRef.value?.swipeTo(props.startIndex)
+    document.body.style.overflow = 'hidden'
     setTimeout(() => {
       autoPlayCurrentVideo()
     }, 200)
   } else {
     pauseAllVideos()
+    document.body.style.overflow = ''
   }
 }, { immediate: true })
 
@@ -266,11 +272,9 @@ watch(swipeIndex, (newIndex, oldIndex) => {
 <style scoped lang="scss">
 .media-preview {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
 
   .media-swipe {
     width: 100%;
@@ -347,6 +351,7 @@ watch(swipeIndex, (newIndex, oldIndex) => {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      display: block;
     }
 
     .video-play-indicator {
