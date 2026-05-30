@@ -23,8 +23,14 @@
                 :ref="el => { if (el) videoRefs[index] = el as HTMLVideoElement }"
                 :src="item.image_path" 
                 class="preview-video"
-                controls
                 playsinline
+                @timeupdate="updateProgress(index)"
+                @loadedmetadata="onVideoLoaded(index)"
+              />
+              <van-icon 
+                v-if="!isPlaying(index)"
+                name="play-circle" 
+                class="video-play-indicator" 
               />
             </template>
             <template v-else>
@@ -33,6 +39,17 @@
           </div>
         </van-swipe-item>
       </van-swipe>
+
+      <div class="video-controls" v-if="media[swipeIndex]?.file_type === 'video'">
+        <div class="progress-bar" @click="seekVideo">
+          <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+          <div class="progress-thumb" :style="{ left: progressPercent + '%' }"></div>
+        </div>
+        <div class="time-display">
+          <span class="current-time">{{ formatTime(currentTime) }}</span>
+          <span class="duration">{{ formatTime(duration) }}</span>
+        </div>
+      </div>
 
       <div class="preview-footer" v-if="media.length > 1">
         <van-icon 
@@ -63,6 +80,11 @@ interface Props {
   startIndex?: number
 }
 
+interface VideoProgress {
+  currentTime: number
+  duration: number
+}
+
 const props = withDefaults(defineProps<Props>(), {
   startIndex: 0
 })
@@ -79,6 +101,66 @@ const visible = computed({
 const swipeIndex = ref(props.startIndex)
 const swipeRef = ref<any>(null)
 const videoRefs = ref<HTMLVideoElement[]>([])
+const videoProgress = ref<Map<number, VideoProgress>>(new Map())
+
+const currentTime = computed(() => {
+  const progress = videoProgress.value.get(swipeIndex.value)
+  return progress?.currentTime || 0
+})
+
+const duration = computed(() => {
+  const progress = videoProgress.value.get(swipeIndex.value)
+  return progress?.duration || 0
+})
+
+const progressPercent = computed(() => {
+  if (duration.value === 0) return 0
+  return (currentTime.value / duration.value) * 100
+})
+
+const isPlaying = (index: number) => {
+  const video = videoRefs.value[index]
+  return video && !video.paused
+}
+
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+const updateProgress = (index: number) => {
+  const video = videoRefs.value[index]
+  if (video) {
+    const current = videoProgress.value.get(index) || { currentTime: 0, duration: 0 }
+    videoProgress.value.set(index, {
+      ...current,
+      currentTime: video.currentTime,
+      duration: video.duration || 0
+    })
+  }
+}
+
+const onVideoLoaded = (index: number) => {
+  const video = videoRefs.value[index]
+  if (video) {
+    const current = videoProgress.value.get(index) || { currentTime: 0, duration: 0 }
+    videoProgress.value.set(index, {
+      ...current,
+      duration: video.duration || 0
+    })
+  }
+}
+
+const seekVideo = (e: MouseEvent) => {
+  const video = videoRefs.value[swipeIndex.value]
+  if (!video) return
+  
+  const target = e.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const percent = (e.clientX - rect.left) / rect.width
+  video.currentTime = percent * video.duration
+}
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
@@ -92,6 +174,29 @@ watch(() => props.startIndex, (newVal) => {
   if (visible.value) {
     swipeRef.value?.swipeTo(newVal)
   }
+})
+
+watch(swipeIndex, (newIndex, oldIndex) => {
+  if (oldIndex !== newIndex && oldIndex >= 0) {
+    const oldVideo = videoRefs.value[oldIndex]
+    if (oldVideo) {
+      const current = videoProgress.value.get(oldIndex) || { currentTime: 0, duration: 0 }
+      videoProgress.value.set(oldIndex, {
+        ...current,
+        currentTime: oldVideo.currentTime,
+        duration: oldVideo.duration || 0
+      })
+    }
+    
+    const newVideo = videoRefs.value[newIndex]
+    if (newVideo) {
+      const savedProgress = videoProgress.value.get(newIndex)
+      if (savedProgress) {
+        newVideo.currentTime = savedProgress.currentTime
+      }
+    }
+  }
+  pauseAllVideos()
 })
 
 const onSwipeChange = (index: number) => {
@@ -203,6 +308,7 @@ const togglePlay = (index: number) => {
     justify-content: center;
     background: #000;
     cursor: pointer;
+    position: relative;
 
     .preview-image {
       max-width: 100%;
@@ -214,6 +320,69 @@ const togglePlay = (index: number) => {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+    }
+
+    .video-play-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 64px;
+      color: rgba(255, 255, 255, 0.8);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+  }
+
+  .video-controls {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    right: 20px;
+    z-index: 100;
+
+    .progress-bar {
+      position: relative;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      cursor: pointer;
+
+      .progress-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: #8FA98F;
+        border-radius: 2px;
+        transition: width 0.1s linear;
+      }
+
+      .progress-thumb {
+        position: absolute;
+        top: 50%;
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        transition: left 0.1s linear;
+      }
+    }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+
+      .current-time,
+      .duration {
+        font-family: monospace;
+      }
     }
   }
 
