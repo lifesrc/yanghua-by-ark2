@@ -7,6 +7,13 @@ import heicConvert from 'heic-convert'
 const HEIC_TYPES = new Set(['heic', 'heif'])
 
 async function normalizeHeicToJpeg(filePath: string): Promise<string> {
+  // 先根据扩展名快速判断，视频文件直接跳过
+  const ext = path.extname(filePath).toLowerCase()
+  if (ext === '.mp4' || ext === '.webm' || ext === '.ogg' || ext === '.mov' || 
+      ext === '.avi' || ext === '.mkv' || ext === '.flv' || ext === '.wmv') {
+    return filePath
+  }
+
   const buffer = await fs.readFile(filePath)
   const detected = await FileType.fromBuffer(buffer)
 
