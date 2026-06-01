@@ -52,10 +52,10 @@ export class UserRepository {
             db.get('SELECT COUNT(*) as fertilize_count FROM care_records WHERE user_id = ? AND type = ?', [userId, 'fertilize'], (err, fertilizeRow: any) => {
               if (err) { reject(err); return }
               resolve({
-                plant_count: plantRow.plant_count,
-                total_records: totalRow.total_records,
-                water_count: waterRow.water_count,
-                fertilize_count: fertilizeRow.fertilize_count
+                plantCount: plantRow.plant_count,
+                totalRecords: totalRow.total_records,
+                waterCount: waterRow.water_count,
+                fertilizeCount: fertilizeRow.fertilize_count
               })
             })
           })

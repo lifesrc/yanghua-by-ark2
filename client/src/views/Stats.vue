@@ -79,14 +79,13 @@ const fetchStats = async () => {
     let res
     if (userId.value) {
       res = await request.get(`/users/${userId.value}/stats`)
-      // 转换字段名
-      if (res.data && res.data.success) {
-        const data = res.data.data
+      if (res.success && res.data) {
+        const data = res.data
         stats.value = {
-          totalRecords: data.total_records || 0,
-          waterCount: data.water_count || 0,
-          fertilizeCount: data.fertilize_count || 0,
-          plantCount: data.plant_count || 0
+          totalRecords: data.totalRecords || 0,
+          waterCount: data.waterCount || 0,
+          fertilizeCount: data.fertilizeCount || 0,
+          plantCount: data.plantCount || 0
         }
       }
     } else {
@@ -102,8 +101,8 @@ const getUsername = async () => {
   if (!userId.value) return
   try {
     const res = await request.get(`/users/${userId.value}`)
-    if (res.data && res.data.success && res.data.data) {
-      username.value = res.data.data.username
+    if (res.success && res.data) {
+      username.value = res.data.username
     }
   } catch (error) {
     console.error('获取用户信息失败', error)
@@ -116,8 +115,13 @@ const goBack = () => {
 
 const fetchTrend = async () => {
   try {
-    const res = await request.get('/stats/trend', { params: { days: 30 } })
-    trendData.value = res.data
+    let res
+    if (userId.value) {
+      res = await request.get(`/users/${userId.value}/trend`, { params: { days: 30 } })
+    } else {
+      res = await request.get('/stats/trend', { params: { days: 30 } })
+    }
+    trendData.value = res.data || []
   } catch (error) {
     console.error('获取趋势数据失败', error)
   }

@@ -20,7 +20,7 @@
       >
         <div class="nav-item">
           <span class="nav-icon">📊</span>
-          <span class="nav-text">我的统计</span>
+          <span class="nav-text">ta 的统计</span>
           <span class="nav-arrow">→</span>
         </div>
       </div>
@@ -31,7 +31,7 @@
       >
         <div class="nav-item">
           <span class="nav-icon">🌱</span>
-          <span class="nav-text">我的植物</span>
+          <span class="nav-text">ta 的植物</span>
           <span class="nav-arrow">→</span>
         </div>
       </div>
@@ -42,7 +42,7 @@
       >
         <div class="nav-item">
           <span class="nav-icon">📝</span>
-          <span class="nav-text">养护记录</span>
+          <span class="nav-text">ta 的记录</span>
           <span class="nav-arrow">→</span>
         </div>
       </div>
@@ -98,29 +98,8 @@ const navigateToRecords = () => {
 
 const getUserInfo = async () => {
   try {
-    console.log('authStore.token:', !!authStore.token)
-    console.log('authStore.user:', authStore.user)
-
-    // 判断是访问自己的页面还是他人的页面
-    if (route.path === '/my') {
-      if (!authStore.user) {
-        // 如果authStore中没有用户信息，先调用接口获取
-        console.log('authStore.user 为 null，调用 fetchUserInfo')
-        await authStore.fetchUserInfo()
-      }
-
-      if (authStore.user) {
-        const response = await request.get(`/users/${authStore.user.id}`)
-        console.log('获取用户信息响应:', response)
-        if (response.success && response.data) {
-          user.value = response.data
-        }
-      } else {
-        console.error('authStore.user 仍然为 null')
-        showToast('无法获取用户信息，请重新登录')
-      }
-    } else if (route.params.id) {
-      // 如果是访问他人的页面，通过用户ID获取信息
+    if (route.params.id) {
+      // 通过用户ID获取信息
       const response = await request.get(`/users/${route.params.id}`)
       if (response.success && response.data) {
         user.value = response.data

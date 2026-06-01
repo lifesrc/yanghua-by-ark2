@@ -1,4 +1,4 @@
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { AuthRequest } from '../middleware/auth'
 import recordRepository from '../repositories/record.repository'
 
@@ -62,6 +62,28 @@ export class StatsController {
       res.json({
         success: true,
         data
+      })
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      })
+    }
+  }
+
+  async getTrendByUserId(req: Request, res: Response) {
+    try {
+      const userId = parseInt(req.params.id)
+      if (isNaN(userId)) {
+        return res.status(400).json({ success: false, error: '无效的用户ID' })
+      }
+
+      const days = req.query.days ? parseInt(req.query.days as string) : 30
+      const trend = await recordRepository.getTrend(userId, days)
+
+      res.json({
+        success: true,
+        data: trend
       })
     } catch (error: any) {
       res.status(500).json({

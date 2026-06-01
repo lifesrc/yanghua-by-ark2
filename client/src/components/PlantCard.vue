@@ -65,7 +65,7 @@ const handleClick = () => {
 
 <style scoped lang="scss">
 .plant-card {
-  width: 120px;
+  width: 100%;
   background: white;
   border-radius: 16px;
   padding: 12px;
