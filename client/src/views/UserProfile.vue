@@ -56,11 +56,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import request from '@/utils/request'
 import type { User } from '@/types'
-import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
 
 const user = ref<User | null>(null)
 const defaultAvatar = 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=200&h=200&fit=crop'
@@ -99,10 +97,9 @@ const navigateToRecords = () => {
 const getUserInfo = async () => {
   try {
     if (route.params.id) {
-      // 通过用户ID获取信息
-      const response = await request.get(`/users/${route.params.id}`)
-      if (response.success && response.data) {
-        user.value = response.data
+      const res = await request.get(`/users/${route.params.id}`) as any
+      if (res.success && res.data) {
+        user.value = res.data
       }
     } else {
       showToast('无法获取用户信息')

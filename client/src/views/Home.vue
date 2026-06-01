@@ -2,7 +2,7 @@
   <div class="page-container home-page">
     <div class="page-header">
       <div class="header-top">
-        <div class="user-info">
+        <div class="user-info" @click="goToMyProfile">
           <div class="avatar">
             {{ authStore.user?.username?.charAt(0) || '?' }}
           </div>
@@ -866,6 +866,12 @@ const previewMedia = (media: RecordImage[], index: number = 0) => {
 
 const getVideoThumbnail = (videoPath: string) => {
   return videoPath
+}
+
+const goToMyProfile = () => {
+  if (authStore.user?.id) {
+    router.push(`/user/${authStore.user.id}`)
+  }
 }
 
 const logout = async () => {
